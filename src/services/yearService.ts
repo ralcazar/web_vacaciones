@@ -5,8 +5,8 @@ export const emptyYear = (year: number): YearData => ({
   version: 2,
   year,
   dayTypes: [
-    { code: 'TT', name: 'Teletrabajo', limit: 104, color: '#327f77' },
     { code: 'V60', name: 'Vacaciones', limit: 26, color: '#d97555' },
+    { code: 'TT', name: 'Teletrabajo', limit: 104, color: '#327f77' },
     { code: 'LD', name: 'Libre disposición', limit: 5, color: '#8b6bb1' },
   ],
   holidays: [],
