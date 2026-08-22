@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateCounters, isDayTypeAvailable, isWeekend, nextDayTypeCode } from '../src/domain/calendar';
+import { calculateCounters, canAddTeleworkDay, isDayTypeAvailable, isWeekend, nextDayTypeCode } from '../src/domain/calendar';
 import { emptyYear, loadOrCreateYear } from '../src/services/yearService';
 import { InMemoryCalendarRepository } from '../src/repositories/InMemoryCalendarRepository';
 import { exportYear, importYear, validateYearData } from '../src/services/jsonTransfer';
@@ -17,6 +17,15 @@ describe('categorías y contadores', () => {
     await repo.saveDay({date:'2026-02-02',type:'category',code:'TT'});
     await repo.saveDay({date:'2026-02-02',type:'category',code:'V60'});
     expect((await repo.getYear(2026))?.days['2026-02-02']).toEqual({type:'category',code:'V60'});
+  });
+  it('limita el teletrabajo a diez días en un mismo mes', async () => {
+    const entries = Array.from({length: 10}, (_, index) => ({date:`2026-01-${String(index + 1).padStart(2, '0')}`,type:'category' as const,code:'TT'}));
+    expect(canAddTeleworkDay(entries, '2026-01-11')).toBe(false);
+    expect(canAddTeleworkDay(entries, '2026-02-01')).toBe(true);
+
+    const repo = new InMemoryCalendarRepository(); await repo.saveYear(emptyYear(2026));
+    for (const entry of entries) await repo.saveDay(entry);
+    await expect(repo.saveDay({date:'2026-01-11',type:'category',code:'TT'})).rejects.toThrow('10 días');
   });
   it('recorre las categorías en orden y después deja el día sin categoría', () => {
     expect(nextDayTypeCode(config.dayTypes)).toBe('TT');
@@ -65,6 +74,8 @@ describe('JSON', () => {
     expect(() => validateYearData({...emptyYear(2026),holidays:[{date:'2027-01-01',name:'x',scope:'local'}]})).toThrow('festivo');
     expect(() => validateYearData({...emptyYear(2026),days:{'2026-02-02':{type:'category',code:'NO'}}})).toThrow('desconocido');
     expect(() => validateYearData({...emptyYear(2026),days:{'2026-05-15':{type:'category',code:'SI'}}})).toThrow('periodo permitido');
+    const tooManyTeleworkDays = Object.fromEntries(Array.from({length: 11}, (_, index) => [`2026-01-${String(index + 1).padStart(2, '0')}`, {type:'category',code:'TT'}]));
+    expect(() => validateYearData({...emptyYear(2026),days:tooManyTeleworkDays})).toThrow('10 días');
   });
 });
 
