@@ -18,7 +18,7 @@ npm run build
 
 ## Publicación en GitHub Pages
 
-El workflow `deploy-pages.yml` publica automáticamente `dist/` cuando se envía un commit a `master`. En el repositorio de GitHub hay que seleccionar una sola vez **Settings → Pages → Source → GitHub Actions**.
+El workflow `deploy-pages.yml` publica automáticamente `dist/` cuando se envía un commit a `main`. En el repositorio de GitHub hay que seleccionar una sola vez **Settings → Pages → Source → GitHub Actions**.
 
 Para este repositorio, la dirección será:
 
@@ -26,7 +26,7 @@ Para este repositorio, la dirección será:
 https://ralcazar.github.io/web_vacaciones/
 ```
 
-El remoto `origin` es `https://github.com/ralcazar/web_vacaciones.git`. Tras activar **Settings → Pages → Source → GitHub Actions**, cada actualización de `master` desplegará esta URL.
+El remoto `origin` es `https://github.com/ralcazar/web_vacaciones.git`. Tras activar **Settings → Pages → Source → GitHub Actions**, cada actualización de `main` desplegará esta URL.
 
 ## Persistencia
 

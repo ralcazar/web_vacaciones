@@ -54,4 +54,4 @@ La siguiente fase debe crear las migraciones SQL, políticas RLS y el adaptador.
 
 ## Despliegue
 
-Vite genera `dist/` estático y `base: './'` permite servirlo desde un subdirectorio de GitHub Pages. El workflow incluido ejecuta instalación reproducible, tests y build, y publica `dist` desde cada commit a `master`.
+Vite genera `dist/` estático y `base: './'` permite servirlo desde un subdirectorio de GitHub Pages. El workflow incluido ejecuta instalación reproducible, tests y build, y publica `dist` desde cada commit a `main`.
