@@ -6,8 +6,7 @@ La aplicación sigue una arquitectura de puertos y adaptadores:
 UI estática (GitHub Pages)
   → servicios de aplicación y dominio puro
     → CalendarRepository (puerto)
-      → adaptador en memoria (fase 1)
-      → futuro adaptador Supabase / Firestore / Worker+D1 / API+Neon
+      → adaptador Supabase
 ```
 
 El frontend nunca importa un SDK de base de datos fuera de un adaptador. La autenticación también será responsabilidad del adaptador (o de un cliente de sesión inyectado en él), y cada consulta futura deberá estar limitada al `user_id` autenticado. En producción no deben incluirse secretos administrativos en GitHub Pages.
@@ -46,11 +45,11 @@ La URL del proyecto y la clave pública `anon` se podrán incluir como variables
 
 La consulta semanal acordada reduce el riesgo práctico de inactividad, pero no sustituye la copia de seguridad JSON ni garantiza que las políticas comerciales no cambien. La exportación portable seguirá siendo parte esencial de la aplicación.
 
-### Adaptador futuro
+### Adaptador
 
-Un `SupabaseCalendarRepository` traducirá filas a `YearData` y será el único módulo que importe `@supabase/supabase-js`. Se añadirá mediante una factoría de composición, conservando `InMemoryCalendarRepository` para tests y desarrollo. Si más adelante cambia el coste o las condiciones, otro adaptador podrá implementar el mismo puerto sin modificar calendario, contadores ni importación/exportación.
+`SupabaseCalendarRepository` traduce las filas a `YearData`; el cliente de Supabase se crea en un módulo de composición separado. La función PostgreSQL `save_calendar_year` hace atómico el reemplazo de un año completo. Si más adelante cambia el proveedor, otro adaptador podrá implementar el mismo puerto sin modificar calendario, contadores ni importación/exportación.
 
-La siguiente fase debe crear las migraciones SQL, políticas RLS y el adaptador. Hasta que eso ocurra, la UI continuará mostrando explícitamente que utiliza memoria y que recargar elimina los datos.
+La migración versionada crea las cuatro tablas, activa RLS y limita cada operación a `auth.uid()`. La interfaz no carga ningún calendario hasta que exista una sesión autenticada.
 
 ## Despliegue
 
