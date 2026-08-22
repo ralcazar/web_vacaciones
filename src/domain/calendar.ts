@@ -1,4 +1,4 @@
-import type { CalendarEntry, Counter, YearConfig } from './models';
+import type { CalendarEntry, Counter, DayType, YearConfig } from './models';
 
 export function calculateCounters(config: YearConfig, entries: CalendarEntry[]): Counter[] {
   const counts = new Map<string, number>();
@@ -10,3 +10,9 @@ export function calculateCounters(config: YearConfig, entries: CalendarEntry[]):
 }
 
 export const isWeekend = (date: string): boolean => [0, 6].includes(new Date(`${date}T12:00:00`).getDay());
+
+export function nextDayTypeCode(dayTypes: DayType[], currentCode?: string): string | undefined {
+  if (!currentCode) return dayTypes[0]?.code;
+  const currentIndex = dayTypes.findIndex(type => type.code === currentCode);
+  return currentIndex >= 0 ? dayTypes[currentIndex + 1]?.code : dayTypes[0]?.code;
+}

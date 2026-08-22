@@ -1,5 +1,5 @@
 import './styles.css';
-import { calculateCounters, isWeekend } from './domain/calendar';
+import { calculateCounters, isWeekend, nextDayTypeCode } from './domain/calendar';
 import type { CalendarEntry, DayType, HolidayScope, YearData } from './domain/models';
 import { InMemoryCalendarRepository } from './repositories/InMemoryCalendarRepository';
 import { exportYear, importYear } from './services/jsonTransfer';
@@ -38,13 +38,20 @@ function shell(content: string) {
 function render() {
   if (view === 'settings') return renderSettings();
   shell(`<main><section class="summary"><div><p class="eyebrow">SALDOS ANUALES</p><h2>Tu año, de un vistazo</h2></div><div class="counters">${countersMarkup()}</div></section><section class="legend">${data.dayTypes.map(t => `<span><i class="lg" style="background:${t.color}"></i>${esc(t.name)}</span>`).join('')}<span><i class="lg holiday"></i>Festivo</span><span><i class="lg weekend"></i>Fin de semana</span></section><section class="calendar">${months.map((_,m) => monthMarkup(m)).join('')}</section></main>`);
-  app.querySelectorAll<HTMLButtonElement>('.day').forEach(b => b.onclick = () => openDay(b.dataset.date!));
+  app.querySelectorAll<HTMLButtonElement>('.day').forEach(b => b.onclick = () => cycleDay(b.dataset.date!));
 }
-function openDay(date: string) {
-  const modal = app.querySelector<HTMLDivElement>('#modal')!; const holiday = data.holidays.find(h => h.date === date); const blocked = holiday || isWeekend(date);
-  modal.innerHTML = `<div class="backdrop"><section class="sheet"><button class="close">×</button><p class="eyebrow">${date}</p><h2>¿Cómo fue este día?</h2>${blocked ? `<p class="warning">⚠️ ${holiday ? `Es festivo: ${esc(holiday.name)}` : 'Es fin de semana'}. Puedes asignarlo, pero no es un día laborable.</p>` : ''}<div class="options"><button data-kind="normal">Día normal</button>${data.dayTypes.map(t => `<button data-kind="category" data-code="${esc(t.code)}"><i style="background:${t.color}"></i>${esc(t.code)} · ${esc(t.name)}</button>`).join('')}</div></section></div>`;
-  modal.querySelector('.close')!.addEventListener('click', () => modal.innerHTML = '');
-  modal.querySelectorAll<HTMLButtonElement>('[data-kind]').forEach(b => b.onclick = async () => { if (b.dataset.kind === 'normal') { await repository.deleteDay(date); delete data.days[date]; } else { const entry = { date, type: 'category', code: b.dataset.code! } as CalendarEntry; await repository.saveDay(entry); const { date: _, ...day } = entry; data.days[date] = day; } render(); });
+async function cycleDay(date: string) {
+  const code = nextDayTypeCode(data.dayTypes, data.days[date]?.code);
+  if (!code) {
+    delete data.days[date];
+    await repository.deleteDay(date);
+  } else {
+    const entry = { date, type: 'category', code } as CalendarEntry;
+    const { date: _, ...day } = entry;
+    data.days[date] = day;
+    await repository.saveDay(entry);
+  }
+  render();
 }
 function renderSettings() {
   shell(`<main class="settings"><section><p class="eyebrow">CONFIGURACIÓN DE ${year}</p><h2>Tipos y saldos anuales</h2><p class="muted">Cada año tiene su propia lista de categorías, límites y colores.</p><div class="list">${data.dayTypes.map((t,i) => `<div class="list-row"><i style="background:${t.color}"></i><div><strong>${esc(t.code)}</strong><small>${esc(t.name)} · Límite ${t.limit}</small></div><button data-edit="${i}">Editar</button><button class="danger" data-remove="${i}" aria-label="Eliminar">×</button></div>`).join('')}</div><button class="primary" id="add-code">+ Añadir categoría</button></section><section><p class="eyebrow">FESTIVOS</p><h2>Fechas no laborables</h2><div class="list">${data.holidays.sort((a,b) => a.date.localeCompare(b.date)).map((h,i) => `<div class="list-row"><div><strong>${h.date.slice(5)}</strong><small>${esc(h.name)} · ${scopeName(h.scope)}</small></div><button class="danger" data-remove-holiday="${i}">×</button></div>`).join('') || '<p class="muted">Todavía no hay festivos.</p>'}</div><button class="secondary" id="add-holiday">+ Añadir festivo</button></section><section><p class="eyebrow">COPIA DE SEGURIDAD</p><h2>Importar y exportar</h2><p class="muted">El JSON contiene todo el año y no depende del futuro proveedor de datos.</p><div class="actions"><button class="secondary" id="export">Exportar JSON</button><label class="button secondary">Importar JSON<input id="import" type="file" accept="application/json"></label></div><p class="dev-note">Modo de desarrollo: repositorio en memoria. Los datos se reinician al recargar.</p></section></main>`);
