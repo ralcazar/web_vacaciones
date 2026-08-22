@@ -3,6 +3,13 @@ import type { CalendarEntry, Counter, DayType, YearConfig } from './models';
 export const HALF_LD_CODE = '1/2 LD';
 export const HALF_LD_LIMIT = 6;
 export const SAN_ISIDRO_CODE = 'SI';
+export const TELEWORK_CODE = 'TT';
+export const TELEWORK_MONTHLY_LIMIT = 10;
+
+export function canAddTeleworkDay(entries: CalendarEntry[], date: string): boolean {
+  const month = date.slice(0, 7);
+  return entries.filter(entry => entry.code === TELEWORK_CODE && entry.date.slice(0, 7) === month && entry.date !== date).length < TELEWORK_MONTHLY_LIMIT;
+}
 
 export function isDayTypeAvailable(code: string, date: string): boolean {
   if (code !== SAN_ISIDRO_CODE) return true;

@@ -1,5 +1,5 @@
 import './styles.css';
-import { calculateCounters, isWeekend, nextDayTypeCode } from './domain/calendar';
+import { calculateCounters, canAddTeleworkDay, isWeekend, nextDayTypeCode, TELEWORK_CODE, TELEWORK_MONTHLY_LIMIT } from './domain/calendar';
 import type { CalendarEntry, DayType, HolidayScope, YearData } from './domain/models';
 import type { CalendarRepository } from './repositories/CalendarRepository';
 import { SupabaseCalendarRepository } from './repositories/SupabaseCalendarRepository';
@@ -53,6 +53,10 @@ function render() {
 }
 async function cycleDay(date: string) {
   const code = nextDayTypeCode(data.dayTypes, data.days[date]?.code, date);
+  if (code === TELEWORK_CODE && !canAddTeleworkDay(entriesOf(data), date)) {
+    alert(`No puedes añadir más de ${TELEWORK_MONTHLY_LIMIT} días de teletrabajo en un mismo mes.`);
+    return;
+  }
   if (!code) {
     delete data.days[date];
     await repository.deleteDay(date);
