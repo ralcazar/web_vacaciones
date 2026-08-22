@@ -24,8 +24,18 @@ describe('categorías y contadores', () => {
     expect(nextDayTypeCode(config.dayTypes, 'V60')).toBeUndefined();
   });
   it('crea el año con V60 como primera categoría', () => {
-    expect(emptyYear(2026).dayTypes.map(type => type.code)).toEqual(['V60', 'TT', 'LD']);
+    expect(emptyYear(2026).dayTypes.map(type => type.code)).toEqual(['V60', 'TT', 'LD', '1/2 LD']);
     expect(nextDayTypeCode(emptyYear(2026).dayTypes)).toBe('V60');
+  });
+  it('descuenta los medios LD del saldo compartido y limita su división a seis medios días', () => {
+    const config = { year: 2026, dayTypes: emptyYear(2026).dayTypes };
+    const entries = [
+      ...['02', '03'].map(day => ({date:`2026-01-${day}`,type:'category' as const,code:'LD'})),
+      ...['04', '05', '06', '07', '08', '09'].map(day => ({date:`2026-01-${day}`,type:'category' as const,code:'1/2 LD'})),
+    ];
+    const counters = calculateCounters(config, entries);
+    expect(counters.find(counter => counter.code === 'LD')).toMatchObject({used:5,remaining:0,exceeded:false});
+    expect(counters.find(counter => counter.code === '1/2 LD')).toMatchObject({used:6,limit:6,remaining:0,exceeded:false});
   });
 });
 
