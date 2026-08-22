@@ -8,6 +8,9 @@ export const emptyYear = (year: number): YearData => ({
   dayTypes: [
     { code: 'V60', name: 'Vacaciones', limit: 26, color: '#d97555' },
     { code: 'TT', name: 'Teletrabajo', limit: 104, color: '#327f77' },
+    { code: 'SAB', name: 'Compensación sábados festivos', limit: 2, color: '#3f7da6' },
+    { code: 'HIJO', name: 'Hijo < 12 años', limit: 1, color: '#b06f8f' },
+    { code: 'ANT', name: 'Antigüedad', limit: 0, color: '#718096' },
     { code: 'LD', name: 'Libre disposición', limit: 5, color: '#8b6bb1' },
     { code: HALF_LD_CODE, name: 'Medio día de libre disposición', limit: HALF_LD_LIMIT, color: '#b395d0' },
     { code: SAN_ISIDRO_CODE, name: 'San Isidro', limit: 1, color: '#d08b3e' },

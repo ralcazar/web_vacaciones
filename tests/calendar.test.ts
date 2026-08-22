@@ -23,8 +23,12 @@ describe('categorías y contadores', () => {
     expect(nextDayTypeCode(config.dayTypes, 'TT')).toBe('V60');
     expect(nextDayTypeCode(config.dayTypes, 'V60')).toBeUndefined();
   });
-  it('crea el año con V60 como primera categoría', () => {
-    expect(emptyYear(2026).dayTypes.map(type => type.code)).toEqual(['V60', 'TT', 'LD', '1/2 LD', 'SI']);
+  it('crea el año con las categorías y saldos predeterminados en el orden esperado', () => {
+    const types = emptyYear(2026).dayTypes;
+    expect(types.map(type => type.code)).toEqual(['V60', 'TT', 'SAB', 'HIJO', 'ANT', 'LD', '1/2 LD', 'SI']);
+    expect(types.find(type => type.code === 'SAB')).toMatchObject({name:'Compensación sábados festivos',limit:2});
+    expect(types.find(type => type.code === 'HIJO')).toMatchObject({name:'Hijo < 12 años',limit:1});
+    expect(types.find(type => type.code === 'ANT')).toMatchObject({name:'Antigüedad',limit:0});
     expect(nextDayTypeCode(emptyYear(2026).dayTypes)).toBe('V60');
   });
   it('limita San Isidro a un día entre el 16 de mayo y el 30 de junio', () => {
