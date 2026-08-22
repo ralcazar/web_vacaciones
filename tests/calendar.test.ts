@@ -23,6 +23,10 @@ describe('categorías y contadores', () => {
     expect(nextDayTypeCode(config.dayTypes, 'TT')).toBe('V60');
     expect(nextDayTypeCode(config.dayTypes, 'V60')).toBeUndefined();
   });
+  it('crea el año con V60 como primera categoría', () => {
+    expect(emptyYear(2026).dayTypes.map(type => type.code)).toEqual(['V60', 'TT', 'LD']);
+    expect(nextDayTypeCode(emptyYear(2026).dayTypes)).toBe('V60');
+  });
 });
 
 describe('JSON', () => {
@@ -42,6 +46,6 @@ describe('JSON', () => {
 describe('años y festivos', () => {
   it('incorpora los tres ámbitos del calendario oficial de Madrid', () => { const holidays=madridHolidays(2026); expect(holidays).toHaveLength(14); expect(new Set(holidays.map(h => h.scope))).toEqual(new Set(['national','regional','local'])); expect(holidays).toContainEqual({date:'2026-05-15',name:'San Isidro Labrador',scope:'local'}); });
   it('avisa cuando el calendario del año no está publicado', () => { expect(() => madridHolidays(2030)).toThrow('no está disponible'); });
-  it('mantiene configuraciones independientes entre años', async () => { const repo=new InMemoryCalendarRepository(); const a=await loadOrCreateYear(repo,2026); a.dayTypes[0]!.limit=12; a.holidays.push({date:'2026-05-01',name:'Trabajo',scope:'national'}); await repo.saveYear(a); const b=await loadOrCreateYear(repo,2027); expect(b.dayTypes[0]!.limit).toBe(104); expect(b.holidays).toEqual([]); expect((await repo.getYear(2026))?.holidays).toHaveLength(1); });
+  it('mantiene configuraciones independientes entre años', async () => { const repo=new InMemoryCalendarRepository(); const a=await loadOrCreateYear(repo,2026); a.dayTypes.find(type => type.code === 'TT')!.limit=12; a.holidays.push({date:'2026-05-01',name:'Trabajo',scope:'national'}); await repo.saveYear(a); const b=await loadOrCreateYear(repo,2027); expect(b.dayTypes.find(type => type.code === 'TT')!.limit).toBe(104); expect(b.holidays).toEqual([]); expect((await repo.getYear(2026))?.holidays).toHaveLength(1); });
   it('detecta fines de semana', () => { expect(isWeekend('2026-08-22')).toBe(true); expect(isWeekend('2026-08-24')).toBe(false); });
 });
