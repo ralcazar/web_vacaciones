@@ -1,4 +1,5 @@
 import type { DayType, YearData } from '../domain/models';
+import { isDayTypeAvailable } from '../domain/calendar';
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const dateInYear = (date: unknown, year: number) => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) && Number(date.slice(0, 4)) === year && !Number.isNaN(new Date(`${date}T12:00:00`).valueOf());
@@ -27,7 +28,7 @@ export function validateYearData(raw: unknown): YearData {
   }
   for (const holiday of input.holidays) if (!isObject(holiday) || !dateInYear(holiday.date, year) || typeof holiday.name !== 'string' || !['national', 'regional', 'local'].includes(String(holiday.scope))) throw new Error('Hay un festivo no válido.');
   for (const [date, day] of Object.entries(input.days)) {
-    if (!dateInYear(date, year) || !isObject(day) || day.type !== 'category' || typeof day.code !== 'string' || !codes.has(day.code)) throw new Error(`La entrada de ${date} no es válida o usa un tipo desconocido.`);
+    if (!dateInYear(date, year) || !isObject(day) || day.type !== 'category' || typeof day.code !== 'string' || !codes.has(day.code) || !isDayTypeAvailable(day.code, date)) throw new Error(`La entrada de ${date} no es válida, usa un tipo desconocido o está fuera de su periodo permitido.`);
   }
   return structuredClone(input) as YearData;
 }

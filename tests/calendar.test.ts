@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateCounters, isWeekend, nextDayTypeCode } from '../src/domain/calendar';
+import { calculateCounters, isDayTypeAvailable, isWeekend, nextDayTypeCode } from '../src/domain/calendar';
 import { emptyYear, loadOrCreateYear } from '../src/services/yearService';
 import { InMemoryCalendarRepository } from '../src/repositories/InMemoryCalendarRepository';
 import { exportYear, importYear, validateYearData } from '../src/services/jsonTransfer';
@@ -24,8 +24,18 @@ describe('categorías y contadores', () => {
     expect(nextDayTypeCode(config.dayTypes, 'V60')).toBeUndefined();
   });
   it('crea el año con V60 como primera categoría', () => {
-    expect(emptyYear(2026).dayTypes.map(type => type.code)).toEqual(['V60', 'TT', 'LD', '1/2 LD']);
+    expect(emptyYear(2026).dayTypes.map(type => type.code)).toEqual(['V60', 'TT', 'LD', '1/2 LD', 'SI']);
     expect(nextDayTypeCode(emptyYear(2026).dayTypes)).toBe('V60');
+  });
+  it('limita San Isidro a un día entre el 16 de mayo y el 30 de junio', () => {
+    const types = emptyYear(2026).dayTypes;
+    expect(types.find(type => type.code === 'SI')).toMatchObject({name:'San Isidro',limit:1});
+    expect(isDayTypeAvailable('SI', '2026-05-15')).toBe(false);
+    expect(isDayTypeAvailable('SI', '2026-05-16')).toBe(true);
+    expect(isDayTypeAvailable('SI', '2026-06-30')).toBe(true);
+    expect(isDayTypeAvailable('SI', '2026-07-01')).toBe(false);
+    expect(nextDayTypeCode(types, '1/2 LD', '2026-05-15')).toBeUndefined();
+    expect(nextDayTypeCode(types, '1/2 LD', '2026-05-16')).toBe('SI');
   });
   it('descuenta los medios LD del saldo compartido y limita su división a seis medios días', () => {
     const config = { year: 2026, dayTypes: emptyYear(2026).dayTypes };
@@ -50,6 +60,7 @@ describe('JSON', () => {
     expect(() => validateYearData({...emptyYear(2026),version:3})).toThrow('Versión');
     expect(() => validateYearData({...emptyYear(2026),holidays:[{date:'2027-01-01',name:'x',scope:'local'}]})).toThrow('festivo');
     expect(() => validateYearData({...emptyYear(2026),days:{'2026-02-02':{type:'category',code:'NO'}}})).toThrow('desconocido');
+    expect(() => validateYearData({...emptyYear(2026),days:{'2026-05-15':{type:'category',code:'SI'}}})).toThrow('periodo permitido');
   });
 });
 
