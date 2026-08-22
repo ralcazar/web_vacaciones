@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateCounters, isWeekend } from '../src/domain/calendar';
+import { calculateCounters, isWeekend, nextDayTypeCode } from '../src/domain/calendar';
 import { emptyYear, loadOrCreateYear } from '../src/services/yearService';
 import { InMemoryCalendarRepository } from '../src/repositories/InMemoryCalendarRepository';
 import { exportYear, importYear, validateYearData } from '../src/services/jsonTransfer';
@@ -17,6 +17,11 @@ describe('categorías y contadores', () => {
     await repo.saveDay({date:'2026-02-02',type:'category',code:'TT'});
     await repo.saveDay({date:'2026-02-02',type:'category',code:'V60'});
     expect((await repo.getYear(2026))?.days['2026-02-02']).toEqual({type:'category',code:'V60'});
+  });
+  it('recorre las categorías en orden y después deja el día sin categoría', () => {
+    expect(nextDayTypeCode(config.dayTypes)).toBe('TT');
+    expect(nextDayTypeCode(config.dayTypes, 'TT')).toBe('V60');
+    expect(nextDayTypeCode(config.dayTypes, 'V60')).toBeUndefined();
   });
 });
 
