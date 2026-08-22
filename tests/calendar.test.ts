@@ -3,6 +3,7 @@ import { calculateCounters, isWeekend, nextDayTypeCode } from '../src/domain/cal
 import { emptyYear, loadOrCreateYear } from '../src/services/yearService';
 import { InMemoryCalendarRepository } from '../src/repositories/InMemoryCalendarRepository';
 import { exportYear, importYear, validateYearData } from '../src/services/jsonTransfer';
+import { madridHolidays } from '../src/services/madridHolidays';
 
 describe('categorías y contadores', () => {
   const config = { year: 2026, dayTypes: [{code:'TT',name:'Teletrabajo',limit:1,color:'#123456'},{code:'V60',name:'Vacaciones',limit:2,color:'#d97555'}] };
@@ -39,6 +40,8 @@ describe('JSON', () => {
 });
 
 describe('años y festivos', () => {
+  it('incorpora los tres ámbitos del calendario oficial de Madrid', () => { const holidays=madridHolidays(2026); expect(holidays).toHaveLength(14); expect(new Set(holidays.map(h => h.scope))).toEqual(new Set(['national','regional','local'])); expect(holidays).toContainEqual({date:'2026-05-15',name:'San Isidro Labrador',scope:'local'}); });
+  it('avisa cuando el calendario del año no está publicado', () => { expect(() => madridHolidays(2030)).toThrow('no está disponible'); });
   it('mantiene configuraciones independientes entre años', async () => { const repo=new InMemoryCalendarRepository(); const a=await loadOrCreateYear(repo,2026); a.dayTypes[0]!.limit=12; a.holidays.push({date:'2026-05-01',name:'Trabajo',scope:'national'}); await repo.saveYear(a); const b=await loadOrCreateYear(repo,2027); expect(b.dayTypes[0]!.limit).toBe(104); expect(b.holidays).toEqual([]); expect((await repo.getYear(2026))?.holidays).toHaveLength(1); });
   it('detecta fines de semana', () => { expect(isWeekend('2026-08-22')).toBe(true); expect(isWeekend('2026-08-24')).toBe(false); });
 });
