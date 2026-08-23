@@ -20,4 +20,5 @@
 .month-heading span{color:#66766f;font-size:11px;white-space:nowrap}
 .month-heading strong{color:#327f77}
 .calendar+.legend{padding-top:24px;padding-bottom:0}
+.lg.holiday-recurring{background:#4f8f63}.day.holiday-recurring{background:#d5eadb;color:#285b38;cursor:default}.day.holiday-recurring:hover{outline:0}
 @media(max-width:600px){.summary-table th,.summary-table td{padding:9px 8px}}

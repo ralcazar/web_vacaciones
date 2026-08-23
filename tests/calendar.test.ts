@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateCounters, canAddTeleworkDay, isDayTypeAvailable, isWeekend, nextDayTypeCode } from '../src/domain/calendar';
+import { calculateCounters, canAddTeleworkDay, isDayTypeAvailable, isRecurringHoliday, isWeekend, nextDayTypeCode, recurringHolidayName } from '../src/domain/calendar';
 import { emptyYear, loadOrCreateYear } from '../src/services/yearService';
 import { InMemoryCalendarRepository } from '../src/repositories/InMemoryCalendarRepository';
 import { exportYear, importYear, validateYearData } from '../src/services/jsonTransfer';
@@ -84,4 +84,17 @@ describe('años y festivos', () => {
   it('avisa cuando el calendario del año no está publicado', () => { expect(() => madridHolidays(2030)).toThrow('no está disponible'); });
   it('mantiene configuraciones independientes entre años', async () => { const repo=new InMemoryCalendarRepository(); const a=await loadOrCreateYear(repo,2026); a.dayTypes.find(type => type.code === 'TT')!.limit=12; a.holidays.push({date:'2026-05-01',name:'Trabajo',scope:'national'}); await repo.saveYear(a); const b=await loadOrCreateYear(repo,2027); expect(b.dayTypes.find(type => type.code === 'TT')!.limit).toBe(104); expect(b.holidays).toEqual([]); expect((await repo.getYear(2026))?.holidays).toHaveLength(1); });
   it('detecta fines de semana', () => { expect(isWeekend('2026-08-22')).toBe(true); expect(isWeekend('2026-08-24')).toBe(false); });
+  it('marca el 24 y el 31 de diciembre como festivos fijos en cualquier año', () => {
+    expect(recurringHolidayName('2026-12-24')).toBe('Nochebuena');
+    expect(recurringHolidayName('2030-12-31')).toBe('Nochevieja');
+    expect(isRecurringHoliday('2025-12-23')).toBe(false);
+    expect(nextDayTypeCode(emptyYear(2026).dayTypes, undefined, '2026-12-24')).toBeUndefined();
+  });
+  it('no descuenta saldo por códigos antiguos en los festivos fijos', () => {
+    const counters = calculateCounters(
+      { year: 2026, dayTypes: emptyYear(2026).dayTypes },
+      [{ date: '2026-12-24', type: 'category', code: 'V60' }, { date: '2026-12-23', type: 'category', code: 'V60' }],
+    );
+    expect(counters.find(counter => counter.code === 'V60')).toMatchObject({ used: 1, remaining: 25 });
+  });
 });
