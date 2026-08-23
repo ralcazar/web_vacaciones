@@ -95,7 +95,7 @@ function renderMissingConfig() {
 }
 
 function renderLogin(message = '') {
-  app.innerHTML = `<main class="auth-page"><form class="auth-card"><p class="eyebrow">ACCESO PROTEGIDO</p><h1>Tu calendario</h1><p class="muted">Entra con tu correo y contraseña. Si todavía no tienes acceso, crea tu usuario aquí.</p>${message ? `<p class="auth-message">${esc(message)}</p>` : ''}<label>Correo electrónico<input name="email" type="email" autocomplete="email" required></label><label>Contraseña<input name="password" type="password" minlength="6" autocomplete="current-password" required></label><button class="primary" name="action" value="login">Entrar</button><button class="secondary auth-secondary" name="action" value="signup">Crear cuenta</button></form></main>`;
+  app.innerHTML = `<main class="auth-page"><form class="auth-card"><p class="eyebrow">ACCESO PROTEGIDO</p><h1>Tu calendario</h1><p class="muted">Entra con tu correo y contraseña. Si todavía no tienes acceso, crea tu usuario aquí.</p>${message ? `<p class="auth-message">${esc(message)}</p>` : ''}<label>Correo electrónico<input name="email" type="email" autocomplete="email" required></label><label>Contraseña<input name="password" type="password" minlength="12" autocomplete="current-password" required></label><button class="primary" name="action" value="login">Entrar</button><button class="secondary auth-secondary" name="action" value="signup">Crear cuenta</button></form></main>`;
   app.querySelector<HTMLFormElement>('form')!.onsubmit = async event => {
     event.preventDefault();
     const submitter = (event as SubmitEvent).submitter as HTMLButtonElement;
