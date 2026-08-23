@@ -5,6 +5,7 @@ import type { CalendarRepository } from './repositories/CalendarRepository';
 import { SupabaseCalendarRepository } from './repositories/SupabaseCalendarRepository';
 import { exportYear, importYear } from './services/jsonTransfer';
 import { madridHolidays } from './services/madridHolidays';
+import { madridSchoolNonTeachingDays } from './services/madridSchoolCalendar';
 import { entriesOf, loadOrCreateYear, toConfig } from './services/yearService';
 import { hasSupabaseConfig, supabase } from './services/supabase';
 
@@ -12,6 +13,7 @@ let repository: CalendarRepository;
 let year = new Date().getFullYear();
 let data: YearData;
 let view: 'calendar' | 'settings' = 'calendar';
+let schoolDays = new Map<string, string>();
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const week = ['L','M','X','J','V','S','D'];
@@ -31,10 +33,11 @@ function monthMarkup(month: number) {
   const blanks = (first.getDay() + 6) % 7; let cells = '<div class="week">' + week.map(d => `<span>${d}</span>`).join('') + '</div><div class="days">';
   cells += '<i></i>'.repeat(blanks);
   for (let day = 1; day <= count; day++) {
-    const date = dateKey(month, day); const entry = data.days[date]; const holiday = data.holidays.find(h => h.date === date); const weekend = isWeekend(date);
+    const date = dateKey(month, day); const entry = data.days[date]; const holiday = data.holidays.find(h => h.date === date); const schoolDay = schoolDays.get(date); const weekend = isWeekend(date);
     let label = ''; let accessibleLabel = ''; let style = ''; let cls = weekend ? 'weekend' : '';
     if (holiday) { cls += ` holiday holiday-${holiday.scope}`; label = holiday.name; accessibleLabel = holiday.name; }
     if (entry) { const type = data.dayTypes.find(t => t.code === entry.code); cls += ' category'; label = entry.code; accessibleLabel = type?.name ?? entry.code; style = `--entry:${type?.color ?? '#d97555'}`; }
+    if (schoolDay) { cls += ' school-non-teaching'; accessibleLabel = [accessibleLabel, schoolDay].filter(Boolean).join(', '); }
     cells += `<button class="day ${cls}" style="${style}" data-date="${date}" aria-label="${date}${accessibleLabel ? `, ${esc(accessibleLabel)}` : ''}"><b>${day}</b>${label ? `<small>${esc(label)}</small>` : ''}</button>`;
   }
   return `<article class="month"><h3>${months[month]}</h3>${cells}</div></article>`;
@@ -48,8 +51,17 @@ function shell(content: string) {
 }
 function render() {
   if (view === 'settings') return renderSettings();
-  shell(`<main><section class="summary"><div><p class="eyebrow">SALDOS ANUALES</p><h2>Tu año, de un vistazo</h2></div><div class="counters">${countersMarkup()}</div></section><section class="legend">${data.dayTypes.map(t => `<span><i class="lg" style="background:${t.color}"></i>${esc(t.name)}</span>`).join('')}<span><i class="lg holiday-national"></i>Festivo nacional</span><span><i class="lg holiday-regional"></i>Comunidad de Madrid</span><span><i class="lg holiday-local"></i>Ciudad de Madrid</span><span><i class="lg weekend"></i>Fin de semana</span></section><section class="calendar">${months.map((_,m) => monthMarkup(m)).join('')}</section></main>`);
+  shell(`<main><section class="summary"><div><p class="eyebrow">SALDOS ANUALES</p><h2>Tu año, de un vistazo</h2></div><div class="counters">${countersMarkup()}</div></section><section class="school-calendar-tools"><div><strong>Calendario lectivo de Madrid</strong><small>Consulta visual; no modifica ni guarda tus días.</small></div><button class="secondary ${schoolDays.size ? 'active' : ''}" id="school-calendar">${schoolDays.size ? 'Ocultar días no lectivos' : 'Cargar días no lectivos'}</button></section><section class="legend">${data.dayTypes.map(t => `<span><i class="lg" style="background:${t.color}"></i>${esc(t.name)}</span>`).join('')}<span><i class="lg holiday-national"></i>Festivo nacional</span><span><i class="lg holiday-regional"></i>Comunidad de Madrid</span><span><i class="lg holiday-local"></i>Ciudad de Madrid</span><span><i class="lg weekend"></i>Fin de semana</span>${schoolDays.size ? '<span><i class="lg school-non-teaching"></i>No lectivo (colegios e institutos)</span>' : ''}</section><section class="calendar">${months.map((_,m) => monthMarkup(m)).join('')}</section></main>`);
+  app.querySelector('#school-calendar')!.addEventListener('click', toggleSchoolCalendar);
   app.querySelectorAll<HTMLButtonElement>('.day').forEach(b => b.onclick = () => cycleDay(b.dataset.date!));
+}
+function toggleSchoolCalendar() {
+  if (schoolDays.size) schoolDays.clear();
+  else {
+    try { schoolDays = new Map(madridSchoolNonTeachingDays(year).map(day => [day.date, day.name])); }
+    catch (error) { return alert(error instanceof Error ? error.message : 'No se pudo cargar el calendario lectivo.'); }
+  }
+  render();
 }
 async function cycleDay(date: string) {
   const code = nextDayTypeCode(data.dayTypes, data.days[date]?.code, date);
@@ -88,7 +100,7 @@ function editCode(index?: number) {
 function addHoliday() { const date = prompt(`Fecha del festivo (${year}-MM-DD)`); if (!date) return; if (!date.startsWith(`${year}-`) || Number.isNaN(new Date(`${date}T12:00:00`).valueOf())) return alert('La fecha no pertenece al año seleccionado.'); const name = prompt('Nombre del festivo'); if (!name) return; const scope = prompt('Ámbito: national, regional o local','local') as HolidayScope; if (!['national','regional','local'].includes(scope)) return alert('Ámbito no válido.'); data.holidays.push({date,name,scope}); repository.saveYear(data).then(renderSettings); }
 function download() { const blob = new Blob([exportYear(data)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `calendario-${year}.json`; a.click(); URL.revokeObjectURL(a.href); }
 async function handleImport(e: Event) { const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return; try { const imported = importYear(await file.text()); const current = await repository.getYear(imported.year); const summary = `${imported.year}: ${imported.dayTypes.length} categorías, ${imported.holidays.length} festivos y ${Object.keys(imported.days).length} días.`; if (!confirm(`Archivo válido. ${summary}\n${current ? 'Ya existen datos de ese año. ¿Quieres sobrescribirlos?' : '¿Quieres importarlo?'}`)) return; await repository.saveYear(imported); year = imported.year; data = imported; renderSettings(); } catch (err) { alert(err instanceof Error ? err.message : 'No se pudo importar.'); } }
-async function changeYear(next: number) { year = next; data = await loadOrCreateYear(repository, year); render(); }
+async function changeYear(next: number) { year = next; schoolDays.clear(); data = await loadOrCreateYear(repository, year); render(); }
 
 function renderMissingConfig() {
   app.innerHTML = `<main class="auth-page"><section class="auth-card"><p class="eyebrow">CONFIGURACIÓN NECESARIA</p><h1>Conecta Supabase</h1><p>Crea un archivo <code>.env.local</code> a partir de <code>.env.example</code>, añade la URL y la clave pública <strong>anon</strong> de tu proyecto y vuelve a iniciar la aplicación.</p><p class="muted">No uses nunca la clave <code>service_role</code> en esta web.</p></section></main>`;

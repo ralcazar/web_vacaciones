@@ -85,3 +85,17 @@ describe('años y festivos', () => {
   it('mantiene configuraciones independientes entre años', async () => { const repo=new InMemoryCalendarRepository(); const a=await loadOrCreateYear(repo,2026); a.dayTypes.find(type => type.code === 'TT')!.limit=12; a.holidays.push({date:'2026-05-01',name:'Trabajo',scope:'national'}); await repo.saveYear(a); const b=await loadOrCreateYear(repo,2027); expect(b.dayTypes.find(type => type.code === 'TT')!.limit).toBe(104); expect(b.holidays).toEqual([]); expect((await repo.getYear(2026))?.holidays).toHaveLength(1); });
   it('detecta fines de semana', () => { expect(isWeekend('2026-08-22')).toBe(true); expect(isWeekend('2026-08-24')).toBe(false); });
 });
+
+describe('calendario lectivo', () => {
+  it('devuelve los días laborables no lectivos como ayuda visual', async () => {
+    const { madridSchoolNonTeachingDays } = await import('../src/services/madridSchoolCalendar');
+    const days = madridSchoolNonTeachingDays(2026);
+    expect(days).toContainEqual({date:'2026-01-07',name:'Vacaciones de Navidad'});
+    expect(days).toContainEqual({date:'2026-03-30',name:'Vacaciones de Semana Santa'});
+    expect(days.some(day => day.date === '2026-06-21')).toBe(false);
+  });
+  it('avisa si el calendario lectivo del año no está incluido', async () => {
+    const { madridSchoolNonTeachingDays } = await import('../src/services/madridSchoolCalendar');
+    expect(() => madridSchoolNonTeachingDays(2030)).toThrow('no está disponible');
+  });
+});
