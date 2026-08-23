@@ -28,6 +28,8 @@ async function start() {
 function dateKey(month: number, day: number) { return `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`; }
 function monthMarkup(month: number) {
   const first = new Date(year, month, 1); const count = new Date(year, month + 1, 0).getDate();
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const teleworkDays = Object.entries(data.days).filter(([date, entry]) => date.startsWith(monthPrefix) && entry.code === TELEWORK_CODE).length;
   const blanks = (first.getDay() + 6) % 7; let cells = '<div class="week">' + week.map(d => `<span>${d}</span>`).join('') + '</div><div class="days">';
   cells += '<i></i>'.repeat(blanks);
   for (let day = 1; day <= count; day++) {
@@ -37,9 +39,13 @@ function monthMarkup(month: number) {
     if (entry) { const type = data.dayTypes.find(t => t.code === entry.code); cls += ' category'; label = entry.code; accessibleLabel = type?.name ?? entry.code; style = `--entry:${type?.color ?? '#d97555'}`; }
     cells += `<button class="day ${cls}" style="${style}" data-date="${date}" aria-label="${date}${accessibleLabel ? `, ${esc(accessibleLabel)}` : ''}"><b>${day}</b>${label ? `<small>${esc(label)}</small>` : ''}</button>`;
   }
-  return `<article class="month"><h3>${months[month]}</h3>${cells}</div></article>`;
+  return `<article class="month"><div class="month-heading"><h3>${months[month]}</h3><span>Teletrabajo: <strong>${teleworkDays}</strong> ${teleworkDays === 1 ? 'día' : 'días'}</span></div>${cells}</div></article>`;
 }
-function countersMarkup() { return calculateCounters(toConfig(data), entriesOf(data)).map(c => `<div class="counter ${c.exceeded ? 'exceeded' : ''}"><span class="dot" style="background:${c.color ?? '#d97555'}"></span><strong>${esc(c.code)}</strong><span>${c.used} / ${c.limit}</span><small>${c.remaining >= 0 ? `${c.remaining} restantes` : `${Math.abs(c.remaining)} de más`}</small></div>`).join('') || '<p class="muted">Añade códigos en Configuración.</p>'; }
+function countersMarkup() {
+  const counters = calculateCounters(toConfig(data), entriesOf(data));
+  if (!counters.length) return '<p class="muted">Añade códigos en Configuración.</p>';
+  return `<div class="summary-table-wrap"><table class="summary-table"><thead><tr><th>Código</th><th>Días de saldo</th><th>Días restantes</th></tr></thead><tbody>${counters.map(c => `<tr class="${c.exceeded ? 'exceeded' : ''}"><td><span class="dot" style="background:${c.color ?? '#d97555'}"></span><strong>${esc(c.code)}</strong></td><td>${c.limit}</td><td>${c.remaining}</td></tr>`).join('')}</tbody></table></div>`;
+}
 function shell(content: string) {
   app.innerHTML = `<header><div><p class="eyebrow">MI CALENDARIO</p><h1>Calendario laboral</h1></div><div class="header-actions"><div class="year-picker"><button id="prev" aria-label="Año anterior">‹</button><strong>${year}</strong><button id="next" aria-label="Año siguiente">›</button></div><button id="logout" class="logout">Salir</button></div></header><nav><button data-view="calendar" class="${view === 'calendar' ? 'active':''}">Calendario</button><button data-view="settings" class="${view === 'settings' ? 'active':''}">Configuración</button></nav>${content}<div id="modal"></div>`;
   app.querySelector('#prev')!.addEventListener('click', () => changeYear(year - 1)); app.querySelector('#next')!.addEventListener('click', () => changeYear(year + 1));
@@ -48,7 +54,7 @@ function shell(content: string) {
 }
 function render() {
   if (view === 'settings') return renderSettings();
-  shell(`<main><section class="summary"><div><p class="eyebrow">SALDOS ANUALES</p><h2>Tu año, de un vistazo</h2></div><div class="counters">${countersMarkup()}</div></section><section class="legend">${data.dayTypes.map(t => `<span><i class="lg" style="background:${t.color}"></i>${esc(t.name)}</span>`).join('')}<span><i class="lg holiday-national"></i>Festivo nacional</span><span><i class="lg holiday-regional"></i>Comunidad de Madrid</span><span><i class="lg holiday-local"></i>Ciudad de Madrid</span><span><i class="lg weekend"></i>Fin de semana</span></section><section class="calendar">${months.map((_,m) => monthMarkup(m)).join('')}</section></main>`);
+  shell(`<main><section class="summary"><div><p class="eyebrow">SALDOS ANUALES</p><h2>Tu año, de un vistazo</h2></div>${countersMarkup()}</section><section class="calendar">${months.map((_,m) => monthMarkup(m)).join('')}</section><section class="legend" aria-label="Leyenda">${data.dayTypes.map(t => `<span><i class="lg" style="background:${t.color}"></i>${esc(t.name)}</span>`).join('')}<span><i class="lg holiday-national"></i>Festivo nacional</span><span><i class="lg holiday-regional"></i>Comunidad de Madrid</span><span><i class="lg holiday-local"></i>Ciudad de Madrid</span><span><i class="lg weekend"></i>Fin de semana</span></section></main>`);
   app.querySelectorAll<HTMLButtonElement>('.day').forEach(b => b.onclick = () => cycleDay(b.dataset.date!));
 }
 async function cycleDay(date: string) {
