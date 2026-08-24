@@ -88,9 +88,11 @@ describe('años y festivos', () => {
     expect(() => madridSchoolNonTeachingDays(2030)).toThrow('no está disponible');
   });
   it('incorpora los tres ámbitos del calendario oficial de Madrid', () => { const holidays=madridHolidays(2026); expect(holidays).toHaveLength(14); expect(new Set(holidays.map(h => h.scope))).toEqual(new Set(['national','regional','local'])); expect(holidays).toContainEqual({date:'2026-05-15',name:'San Isidro Labrador',scope:'local'}); });
-  it('incluye festivos, vacaciones escolares y no lectivos de enero siguiente', () => {
+  it('en enero siguiente solo marca festivos normales y días no lectivos, no vacaciones escolares', () => {
     const january = madridJanuaryCalendar(2027);
     expect(january.holidays.map(day => day.date)).toEqual(['2027-01-01', '2027-01-06']);
+    expect(january.schoolDays.map(day => day.date)).toEqual(['2027-01-07', '2027-01-08']);
+    expect(january.schoolDays.find(day => day.date === '2027-01-02')).toBeUndefined();
     expect(january.schoolDays.find(day => day.date === '2027-01-07')).toMatchObject({ kind: 'non-teaching' });
     expect(january.schoolDays.find(day => day.date === '2027-01-08')).toMatchObject({ kind: 'non-teaching' });
   });

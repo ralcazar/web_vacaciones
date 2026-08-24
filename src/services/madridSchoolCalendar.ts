@@ -6,7 +6,7 @@ export interface SchoolNonTeachingDay {
 }
 
 export type SchoolDay = SchoolNonTeachingDay & {
-  kind: 'school-break' | 'non-teaching';
+  kind: 'non-teaching';
 };
 
 type SchoolDayTuple = [monthDay: string, name: string];
@@ -49,7 +49,6 @@ const januaryCalendars: Record<number, JanuaryCalendar> = {
       { date: '2026-01-06', name: 'Epifanía del Señor', scope: 'national' },
     ],
     schoolDays: [
-      ...Array.from({ length: 6 }, (_, index) => ({ date: `2026-01-${String(index + 1).padStart(2, '0')}`, name: 'Vacaciones escolares de Navidad', kind: 'school-break' as const })),
       { date: '2026-01-07', name: 'Día no lectivo · Comunidad y Madrid capital', kind: 'non-teaching' },
     ],
   },
@@ -59,7 +58,6 @@ const januaryCalendars: Record<number, JanuaryCalendar> = {
       { date: '2027-01-06', name: 'Epifanía del Señor', scope: 'national' },
     ],
     schoolDays: [
-      ...Array.from({ length: 6 }, (_, index) => ({ date: `2027-01-${String(index + 1).padStart(2, '0')}`, name: 'Vacaciones escolares de Navidad', kind: 'school-break' as const })),
       { date: '2027-01-07', name: 'Día no lectivo · Comunidad y Madrid capital', kind: 'non-teaching' },
       { date: '2027-01-08', name: 'Día no lectivo · Comunidad y Madrid capital', kind: 'non-teaching' },
     ],
