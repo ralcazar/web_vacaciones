@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateCounters, canAddTeleworkDay, isDayTypeAvailable, isRecurringHoliday, isWeekend, nextDayTypeCode, recurringHolidayName } from '../src/domain/calendar';
+import { calculateCounters, calculateSummaryCounters, canAddTeleworkDay, isDayTypeAvailable, isRecurringHoliday, isWeekend, nextDayTypeCode, recurringHolidayName } from '../src/domain/calendar';
 import { emptyYear, loadOrCreateYear } from '../src/services/yearService';
 import { InMemoryCalendarRepository } from '../src/repositories/InMemoryCalendarRepository';
 import { exportYear, importYear, validateYearData } from '../src/services/jsonTransfer';
@@ -60,6 +60,16 @@ describe('categorías y contadores', () => {
     const counters = calculateCounters(config, entries);
     expect(counters.find(counter => counter.code === 'LD')).toMatchObject({used:5,remaining:0,exceeded:false});
     expect(counters.find(counter => counter.code === '1/2 LD')).toMatchObject({used:6,limit:6,remaining:0,exceeded:false});
+  });
+  it('agrupa los medios días en LD dentro del resumen', () => {
+    const config = { year: 2026, dayTypes: emptyYear(2026).dayTypes };
+    const counters = calculateSummaryCounters(config, [
+      {date:'2026-01-02',type:'category',code:'LD'},
+      {date:'2026-01-03',type:'category',code:'1/2 LD'},
+    ]);
+
+    expect(counters.some(counter => counter.code === '1/2 LD')).toBe(false);
+    expect(counters.find(counter => counter.code === 'LD')).toMatchObject({used:1.5,remaining:3.5});
   });
 });
 
