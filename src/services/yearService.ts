@@ -1,19 +1,19 @@
 import type { CalendarEntry, YearConfig, YearData } from '../domain/models';
-import { HALF_LD_CODE, HALF_LD_LIMIT, SAN_ISIDRO_CODE } from '../domain/calendar';
+import { defaultUseUntil, HALF_LD_CODE, HALF_LD_LIMIT, SAN_ISIDRO_CODE } from '../domain/calendar';
 import type { CalendarRepository } from '../repositories/CalendarRepository';
 
 export const emptyYear = (year: number): YearData => ({
-  version: 2,
+  version: 3,
   year,
   dayTypes: [
-    { code: 'V60', name: 'Vacaciones', limit: 26, color: '#d97555' },
-    { code: 'TT', name: 'Teletrabajo', limit: 104, color: '#327f77' },
-    { code: 'SAB', name: 'Compensación sábados festivos', limit: 2, color: '#3f7da6' },
-    { code: 'HIJO', name: 'Hijo < 12 años', limit: 1, color: '#b06f8f' },
-    { code: 'ANT', name: 'Antigüedad', limit: 0, color: '#718096' },
-    { code: 'LD', name: 'Libre disposición', limit: 5, color: '#8b6bb1' },
-    { code: HALF_LD_CODE, name: 'Medio día de libre disposición', limit: HALF_LD_LIMIT, color: '#b395d0' },
-    { code: SAN_ISIDRO_CODE, name: 'San Isidro', limit: 1, color: '#d08b3e' },
+    { code: 'V60', name: 'Vacaciones', limit: 26, color: '#d97555', useUntil: defaultUseUntil(year, 'V60') },
+    { code: 'TT', name: 'Teletrabajo', limit: 104, color: '#327f77', useUntil: defaultUseUntil(year, 'TT') },
+    { code: 'SAB', name: 'Compensación sábados festivos', limit: 2, color: '#3f7da6', useUntil: defaultUseUntil(year, 'SAB') },
+    { code: 'HIJO', name: 'Hijo < 12 años', limit: 1, color: '#b06f8f', useUntil: defaultUseUntil(year, 'HIJO') },
+    { code: 'ANT', name: 'Antigüedad', limit: 0, color: '#718096', useUntil: defaultUseUntil(year, 'ANT') },
+    { code: 'LD', name: 'Libre disposición', limit: 5, color: '#8b6bb1', useUntil: defaultUseUntil(year, 'LD') },
+    { code: HALF_LD_CODE, name: 'Medio día de libre disposición', limit: HALF_LD_LIMIT, color: '#b395d0', useUntil: defaultUseUntil(year, HALF_LD_CODE) },
+    { code: SAN_ISIDRO_CODE, name: 'San Isidro', limit: 1, color: '#d08b3e', useUntil: defaultUseUntil(year, SAN_ISIDRO_CODE) },
   ],
   holidays: [],
   days: {},

@@ -4,10 +4,10 @@ import { emptyYear, loadOrCreateYear } from '../src/services/yearService';
 import { InMemoryCalendarRepository } from '../src/repositories/InMemoryCalendarRepository';
 import { exportYear, importYear, validateYearData } from '../src/services/jsonTransfer';
 import { madridHolidays } from '../src/services/madridHolidays';
-import { madridSchoolNonTeachingDays } from '../src/services/madridSchoolCalendar';
+import { madridJanuaryCalendar, madridSchoolNonTeachingDays } from '../src/services/madridSchoolCalendar';
 
 describe('categorías y contadores', () => {
-  const config = { year: 2026, dayTypes: [{code:'TT',name:'Teletrabajo',limit:1,color:'#123456'},{code:'V60',name:'Vacaciones',limit:2,color:'#d97555'}] };
+  const config = { year: 2026, dayTypes: [{code:'TT',name:'Teletrabajo',limit:1,color:'#123456',useUntil:'2026-12-31'},{code:'V60',name:'Vacaciones',limit:2,color:'#d97555',useUntil:'2027-02-28'}] };
   it('calcula todas las categorías de la misma manera', () => {
     const counters = calculateCounters(config, [{date:'2026-01-02',type:'category',code:'V60'},{date:'2026-01-03',type:'category',code:'TT'},{date:'2026-01-04',type:'category',code:'TT'}]);
     expect(counters[1]).toMatchObject({used:1,remaining:1,exceeded:false});
@@ -71,7 +71,7 @@ describe('JSON', () => {
     expect(migrated.days).toEqual({'2026-01-02':{type:'category',code:'TT'},'2026-01-03':{type:'category',code:'V60'}});
   });
   it('rechaza versión, fecha y categorías desconocidas', () => {
-    expect(() => validateYearData({...emptyYear(2026),version:3})).toThrow('Versión');
+    expect(() => validateYearData({...emptyYear(2026),version:4})).toThrow('Versión');
     expect(() => validateYearData({...emptyYear(2026),holidays:[{date:'2027-01-01',name:'x',scope:'local'}]})).toThrow('festivo');
     expect(() => validateYearData({...emptyYear(2026),days:{'2026-02-02':{type:'category',code:'NO'}}})).toThrow('desconocido');
     expect(() => validateYearData({...emptyYear(2026),days:{'2026-05-15':{type:'category',code:'SI'}}})).toThrow('periodo permitido');
@@ -88,6 +88,22 @@ describe('años y festivos', () => {
     expect(() => madridSchoolNonTeachingDays(2030)).toThrow('no está disponible');
   });
   it('incorpora los tres ámbitos del calendario oficial de Madrid', () => { const holidays=madridHolidays(2026); expect(holidays).toHaveLength(14); expect(new Set(holidays.map(h => h.scope))).toEqual(new Set(['national','regional','local'])); expect(holidays).toContainEqual({date:'2026-05-15',name:'San Isidro Labrador',scope:'local'}); });
+  it('incluye festivos, vacaciones escolares y no lectivos de enero siguiente', () => {
+    const january = madridJanuaryCalendar(2027);
+    expect(january.holidays.map(day => day.date)).toEqual(['2027-01-01', '2027-01-06']);
+    expect(january.schoolDays.find(day => day.date === '2027-01-07')).toMatchObject({ kind: 'non-teaching' });
+    expect(january.schoolDays.find(day => day.date === '2027-01-08')).toMatchObject({ kind: 'non-teaching' });
+  });
+  it('solo permite V60 en enero del año siguiente según la fecha límite de cada categoría', async () => {
+    const data = emptyYear(2026);
+    expect(nextDayTypeCode(data.dayTypes, undefined, '2027-01-11', 2026)).toBe('V60');
+    expect(nextDayTypeCode(data.dayTypes, 'V60', '2027-01-11', 2026)).toBeUndefined();
+    expect(nextDayTypeCode(data.dayTypes, undefined, '2027-03-01', 2026)).toBeUndefined();
+    const repo = new InMemoryCalendarRepository(); await repo.saveYear(data);
+    await repo.saveDay({date:'2027-01-11',type:'category',code:'V60'}, 2026);
+    await expect(repo.saveDay({date:'2027-01-12',type:'category',code:'TT'}, 2026)).rejects.toThrow('periodo');
+    expect((await repo.getYear(2026))?.days['2027-01-11']).toEqual({type:'category',code:'V60'});
+  });
   it('avisa cuando el calendario del año no está publicado', () => { expect(() => madridHolidays(2030)).toThrow('no está disponible'); });
   it('mantiene configuraciones independientes entre años', async () => { const repo=new InMemoryCalendarRepository(); const a=await loadOrCreateYear(repo,2026); a.dayTypes.find(type => type.code === 'TT')!.limit=12; a.holidays.push({date:'2026-05-01',name:'Trabajo',scope:'national'}); await repo.saveYear(a); const b=await loadOrCreateYear(repo,2027); expect(b.dayTypes.find(type => type.code === 'TT')!.limit).toBe(104); expect(b.holidays).toEqual([]); expect((await repo.getYear(2026))?.holidays).toHaveLength(1); });
   it('detecta fines de semana', () => { expect(isWeekend('2026-08-22')).toBe(true); expect(isWeekend('2026-08-24')).toBe(false); });

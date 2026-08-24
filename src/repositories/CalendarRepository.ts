@@ -4,7 +4,7 @@ import type { CalendarEntry, YearConfig, YearData } from '../domain/models';
 export interface CalendarRepository {
   getYear(year: number): Promise<YearData | null>;
   saveYear(data: YearData): Promise<void>;
-  saveDay(entry: CalendarEntry): Promise<void>;
-  deleteDay(date: string): Promise<void>;
+  saveDay(entry: CalendarEntry, entitlementYear?: number): Promise<void>;
+  deleteDay(date: string, entitlementYear?: number): Promise<void>;
   saveYearConfig(config: YearConfig): Promise<void>;
 }

@@ -1,9 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CalendarEntry, DayType, Holiday, YearConfig, YearData } from '../domain/models';
+import { defaultUseUntil } from '../domain/calendar';
 import type { CalendarRepository } from './CalendarRepository';
 
 type YearRow = { year: number };
-type TypeRow = { code: string; name: string; annual_limit: number; color: string; position: number };
+type TypeRow = { code: string; name: string; annual_limit: number; color: string; position: number; use_until: string | null };
 type HolidayRow = { date: string; name: string; scope: Holiday['scope'] };
 type DayRow = { date: string; leave_code: string };
 
@@ -15,16 +16,16 @@ export class SupabaseCalendarRepository implements CalendarRepository {
     if (yearError) throw yearError;
     if (!yearRow) return null;
     const [typesResult, holidaysResult, daysResult] = await Promise.all([
-      this.client.from('leave_types').select('code,name,annual_limit,color,position').eq('year', year).order('position'),
+      this.client.from('leave_types').select('code,name,annual_limit,color,position,use_until').eq('year', year).order('position'),
       this.client.from('holidays').select('date,name,scope').eq('year', year).order('date'),
       this.client.from('calendar_entries').select('date,leave_code').eq('year', year),
     ]);
     if (typesResult.error) throw typesResult.error;
     if (holidaysResult.error) throw holidaysResult.error;
     if (daysResult.error) throw daysResult.error;
-    const dayTypes: DayType[] = (typesResult.data as TypeRow[]).map(row => ({ code: row.code, name: row.name, limit: row.annual_limit, color: row.color }));
+    const dayTypes: DayType[] = (typesResult.data as TypeRow[]).map(row => ({ code: row.code, name: row.name, limit: row.annual_limit, color: row.color, useUntil: row.use_until ?? defaultUseUntil(year, row.code) }));
     const days = Object.fromEntries((daysResult.data as DayRow[]).map(row => [row.date, { type: 'category' as const, code: row.leave_code }]));
-    return { version: 2, year: yearRow.year, dayTypes, holidays: holidaysResult.data as HolidayRow[], days };
+    return { version: 3, year: yearRow.year, dayTypes, holidays: holidaysResult.data as HolidayRow[], days };
   }
 
   async saveYear(data: YearData): Promise<void> {
@@ -32,15 +33,15 @@ export class SupabaseCalendarRepository implements CalendarRepository {
     if (error) throw error;
   }
 
-  async saveDay(entry: CalendarEntry): Promise<void> {
+  async saveDay(entry: CalendarEntry, entitlementYear = Number(entry.date.slice(0, 4))): Promise<void> {
     const { error } = await this.client.from('calendar_entries').upsert({
-      year: Number(entry.date.slice(0, 4)), date: entry.date, leave_code: entry.code,
+      year: entitlementYear, date: entry.date, leave_code: entry.code,
     }, { onConflict: 'user_id,date' });
     if (error) throw error;
   }
 
-  async deleteDay(date: string): Promise<void> {
-    const { error } = await this.client.from('calendar_entries').delete().eq('date', date);
+  async deleteDay(date: string, entitlementYear = Number(date.slice(0, 4))): Promise<void> {
+    const { error } = await this.client.from('calendar_entries').delete().eq('year', entitlementYear).eq('date', date);
     if (error) throw error;
   }
 

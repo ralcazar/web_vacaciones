@@ -48,7 +48,7 @@ Con esos secretos, Codex podrá ejecutar `supabase projects create`, aplicar est
 Si prefieres no dar acceso temporal a Codex, la configuración inicial es:
 
 1. En el panel de Supabase, abre **SQL Editor → New query**.
-2. Copia y ejecuta todo el archivo [`supabase/migrations/20260822000000_calendar.sql`](supabase/migrations/20260822000000_calendar.sql). Este crea tablas, relaciones, la función de guardado y políticas RLS que aíslan los datos de cada usuario.
+2. Ejecuta en orden los archivos de [`supabase/migrations`](supabase/migrations). Estos crean las tablas, las reglas de guardado y las políticas RLS, y aplican las ampliaciones posteriores del calendario sin perder los datos existentes.
 3. Ve a **Project Settings → API** y copia la **Project URL** y la clave pública **anon/publishable**. No copies nunca `service_role`.
 4. En local crea `.env.local` (está ignorado por Git) a partir del ejemplo:
 
