@@ -1,5 +1,5 @@
 import './styles.css';
-import { calculateCounters, canAddTeleworkDay, defaultUseUntil, isRecurringHoliday, isWeekend, nextDayTypeCode, recurringHolidayName, TELEWORK_CODE, TELEWORK_MONTHLY_LIMIT } from './domain/calendar';
+import { calculateSummaryCounters, canAddTeleworkDay, defaultUseUntil, isRecurringHoliday, isWeekend, nextDayTypeCode, recurringHolidayName, TELEWORK_CODE, TELEWORK_MONTHLY_LIMIT } from './domain/calendar';
 import type { CalendarEntry, DayType, HolidayScope, YearData } from './domain/models';
 import type { CalendarRepository } from './repositories/CalendarRepository';
 import { SupabaseCalendarRepository } from './repositories/SupabaseCalendarRepository';
@@ -50,7 +50,7 @@ function monthMarkup(calendarYear: number, month: number, nextYearJanuary = fals
   return `<article class="month ${nextYearJanuary ? 'next-year-month' : ''}"><div class="month-heading"><h3>${heading}</h3><span>${detail}</span></div>${cells}</div></article>`;
 }
 function countersMarkup() {
-  const counters = calculateCounters(toConfig(data), entriesOf(data));
+  const counters = calculateSummaryCounters(toConfig(data), entriesOf(data));
   if (!counters.length) return '<p class="muted">Añade códigos en Configuración.</p>';
   return `<div class="summary-table-wrap"><table class="summary-table"><thead><tr><th>Código</th><th>Días de saldo</th><th>Días restantes</th></tr></thead><tbody>${counters.map(c => `<tr class="${c.exceeded ? 'exceeded' : ''}"><td><span class="dot" style="background:${c.color ?? '#d97555'}"></span><strong>${esc(c.code)}</strong></td><td>${c.limit}</td><td>${c.remaining}</td></tr>`).join('')}</tbody></table></div>`;
 }

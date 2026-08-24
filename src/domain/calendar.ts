@@ -51,6 +51,10 @@ export function calculateCounters(config: YearConfig, entries: CalendarEntry[]):
   });
 }
 
+export function calculateSummaryCounters(config: YearConfig, entries: CalendarEntry[]): Counter[] {
+  return calculateCounters(config, entries).filter(counter => counter.code !== HALF_LD_CODE);
+}
+
 export const isWeekend = (date: string): boolean => [0, 6].includes(new Date(`${date}T12:00:00`).getDay());
 
 export function nextDayTypeCode(dayTypes: DayType[], currentCode?: string, date?: string, entitlementYear?: number): string | undefined {
