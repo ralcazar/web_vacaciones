@@ -23,7 +23,5 @@
 .lg.holiday-recurring{background:#4f8f63}.day.holiday-recurring{background:#d5eadb;color:#285b38;cursor:default}.day.holiday-recurring:hover{outline:0}
 .calendar-tools{display:flex;align-items:center;gap:14px;margin:0 0 18px}.calendar-tools p{margin:0;color:#66766f;font-size:12px}.school-calendar-button{font-weight:600;white-space:nowrap}.school-calendar-button.active{background:#edf5f2;border-color:#47766b;color:#285b50}.day.school-non-teaching{border:3px solid transparent;background-image:linear-gradient(var(--entry, #f6f7f3),var(--entry, #f6f7f3)),repeating-linear-gradient(135deg,#2c695b 0 3px,#b8d2ca 3px 6px);background-origin:border-box;background-clip:padding-box,border-box}.day.school-non-teaching.weekend{--entry:#eceeea}.day.school-non-teaching.holiday-national{--entry:#f5dfbd}.day.school-non-teaching.holiday-regional{--entry:#efd0c9}.day.school-non-teaching.holiday-local{--entry:#ddd5ee}.day.school-non-teaching.holiday-recurring{--entry:#d5eadb}.lg.school-non-teaching{border:2px dashed #2c695b;background:#edf5f2}
 .next-year-month{border:2px solid #d99670}.next-year-month .month-heading h3{color:#a65335}
-.lg.non-teaching{background:#d4a856}.day.non-teaching{background:#f3e5bd;color:#72591c}
-.day.non-teaching.holiday-national{background:#f5dfbd;color:#744b13}
 @media(max-width:600px){.summary-table th,.summary-table td{padding:9px 8px}}
 @media(max-width:600px){.calendar-tools{align-items:stretch;flex-direction:column}.calendar-tools p{padding:0 4px}.school-calendar-button{white-space:normal;text-align:center}}

@@ -5,12 +5,8 @@ export interface SchoolNonTeachingDay {
   name: string;
 }
 
-export type SchoolDay = SchoolNonTeachingDay & {
-  kind: 'non-teaching';
-};
-
 type SchoolDayTuple = [monthDay: string, name: string];
-type JanuaryCalendar = { holidays: Holiday[]; schoolDays: SchoolDay[] };
+type JanuaryCalendar = { holidays: Holiday[] };
 
 // Días comunes a colegios e institutos en los calendarios escolares publicados
 // por la Comunidad de Madrid. No se incluyen las vacaciones de verano porque
@@ -48,20 +44,21 @@ const januaryCalendars: Record<number, JanuaryCalendar> = {
       { date: '2026-01-01', name: 'Año Nuevo', scope: 'national' },
       { date: '2026-01-06', name: 'Epifanía del Señor', scope: 'national' },
     ],
-    schoolDays: [
-      { date: '2026-01-07', name: 'Día no lectivo · Comunidad y Madrid capital', kind: 'non-teaching' },
-    ],
   },
   2027: {
     holidays: [
       { date: '2027-01-01', name: 'Año Nuevo', scope: 'national' },
       { date: '2027-01-06', name: 'Epifanía del Señor', scope: 'national' },
     ],
-    schoolDays: [
-      { date: '2027-01-07', name: 'Día no lectivo · Comunidad y Madrid capital', kind: 'non-teaching' },
-      { date: '2027-01-08', name: 'Día no lectivo · Comunidad y Madrid capital', kind: 'non-teaching' },
-    ],
   },
+};
+
+const januaryNonTeachingDays: Record<number, SchoolNonTeachingDay[]> = {
+  2026: [{ date: '2026-01-07', name: 'Día no lectivo · Comunidad y Madrid capital' }],
+  2027: [
+    { date: '2027-01-07', name: 'Día no lectivo · Comunidad y Madrid capital' },
+    { date: '2027-01-08', name: 'Día no lectivo · Comunidad y Madrid capital' },
+  ],
 };
 
 export function madridSchoolNonTeachingDays(year: number): SchoolNonTeachingDay[] {
@@ -71,5 +68,9 @@ export function madridSchoolNonTeachingDays(year: number): SchoolNonTeachingDay[
 }
 
 export function madridJanuaryCalendar(year: number): JanuaryCalendar {
-  return januaryCalendars[year] ?? { holidays: [], schoolDays: [] };
+  return januaryCalendars[year] ?? { holidays: [] };
+}
+
+export function madridJanuaryNonTeachingDays(year: number): SchoolNonTeachingDay[] {
+  return januaryNonTeachingDays[year] ?? [];
 }

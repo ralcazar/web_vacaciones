@@ -4,7 +4,7 @@ import { emptyYear, loadOrCreateYear } from '../src/services/yearService';
 import { InMemoryCalendarRepository } from '../src/repositories/InMemoryCalendarRepository';
 import { exportYear, importYear, validateYearData } from '../src/services/jsonTransfer';
 import { madridHolidays } from '../src/services/madridHolidays';
-import { madridJanuaryCalendar, madridSchoolNonTeachingDays } from '../src/services/madridSchoolCalendar';
+import { madridJanuaryCalendar, madridJanuaryNonTeachingDays, madridSchoolNonTeachingDays } from '../src/services/madridSchoolCalendar';
 
 describe('categorías y contadores', () => {
   const config = { year: 2026, dayTypes: [{code:'TT',name:'Teletrabajo',limit:1,color:'#123456',useUntil:'2026-12-31'},{code:'V60',name:'Vacaciones',limit:2,color:'#d97555',useUntil:'2027-02-28'}] };
@@ -88,13 +88,11 @@ describe('años y festivos', () => {
     expect(() => madridSchoolNonTeachingDays(2030)).toThrow('no está disponible');
   });
   it('incorpora los tres ámbitos del calendario oficial de Madrid', () => { const holidays=madridHolidays(2026); expect(holidays).toHaveLength(14); expect(new Set(holidays.map(h => h.scope))).toEqual(new Set(['national','regional','local'])); expect(holidays).toContainEqual({date:'2026-05-15',name:'San Isidro Labrador',scope:'local'}); });
-  it('en enero siguiente solo marca festivos normales y días no lectivos, no vacaciones escolares', () => {
+  it('en enero siguiente solo marca permanentemente los festivos normales', () => {
     const january = madridJanuaryCalendar(2027);
     expect(january.holidays.map(day => day.date)).toEqual(['2027-01-01', '2027-01-06']);
-    expect(january.schoolDays.map(day => day.date)).toEqual(['2027-01-07', '2027-01-08']);
-    expect(january.schoolDays.find(day => day.date === '2027-01-02')).toBeUndefined();
-    expect(january.schoolDays.find(day => day.date === '2027-01-07')).toMatchObject({ kind: 'non-teaching' });
-    expect(january.schoolDays.find(day => day.date === '2027-01-08')).toMatchObject({ kind: 'non-teaching' });
+    expect(january).not.toHaveProperty('schoolDays');
+    expect(madridJanuaryNonTeachingDays(2027).map(day => day.date)).toEqual(['2027-01-07', '2027-01-08']);
   });
   it('solo permite V60 en enero del año siguiente según la fecha límite de cada categoría', async () => {
     const data = emptyYear(2026);
